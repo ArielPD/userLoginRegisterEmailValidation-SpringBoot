@@ -2,11 +2,17 @@ package com.apd.userLoginRegisterEmailValidationSpringBoot.services;
 
 import com.apd.userLoginRegisterEmailValidationSpringBoot.dto.RegistrationDto;
 import com.apd.userLoginRegisterEmailValidationSpringBoot.models.ApplicationUser;
+import com.apd.userLoginRegisterEmailValidationSpringBoot.models.Token;
 import com.apd.userLoginRegisterEmailValidationSpringBoot.models.UserRole;
+import com.apd.userLoginRegisterEmailValidationSpringBoot.repositories.TokenRepository;
 import com.apd.userLoginRegisterEmailValidationSpringBoot.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import javax.transaction.Transactional;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -14,7 +20,9 @@ public class RegistrationService {
 
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final TokenRepository tokenRepository;
 
+    @Transactional
     public String register(RegistrationDto registrationDto) {
 
         //check if the user already exits
@@ -37,9 +45,19 @@ public class RegistrationService {
                 .build();
 
         // Save the user
-        repository.save(aplicationUser);
+        ApplicationUser savedUser = repository.save(aplicationUser);
+
+        // Generate a token
+        String generatedToken = UUID.randomUUID().toString();
+        Token token = Token.builder()
+                .token(generatedToken)
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
+                .user(savedUser)
+                .build();
+        tokenRepository.save(token);
 
         //return success message
-        return "User has been successfully created";
+        return generatedToken;
     }
 }
