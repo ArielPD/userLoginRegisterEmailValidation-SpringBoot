@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.mail.MessagingException;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -18,9 +19,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RegistrationService {
 
+    private static final String CONFIRMATION_URL = "";
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final TokenRepository tokenRepository;
+    private final EmailService emailService;
 
     @Transactional
     public String register(RegistrationDto registrationDto) {
@@ -56,6 +59,18 @@ public class RegistrationService {
                 .user(savedUser)
                 .build();
         tokenRepository.save(token);
+
+        // Send th confirmation email
+        try {
+            emailService.send(
+                    registrationDto.getEmail(),
+                    registrationDto.getFirstName(),
+                    null,
+                    CONFIRMATION_URL
+            );
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
 
         //return success message
         return generatedToken;
