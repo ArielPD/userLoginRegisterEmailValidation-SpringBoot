@@ -4,10 +4,7 @@ import com.apd.userLoginRegisterEmailValidationSpringBoot.dto.RegistrationDto;
 import com.apd.userLoginRegisterEmailValidationSpringBoot.services.RegistrationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/authentication")
@@ -19,5 +16,10 @@ public class AuthenticationController {
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegistrationDto registrationDto) {
         return ResponseEntity.ok(service.register(registrationDto));
+    }
+
+    @GetMapping("/confirm")
+    public ResponseEntity<String> confirm(@RequestParam String token) {
+        return ResponseEntity.ok(service.confirm(token));
     }
 }

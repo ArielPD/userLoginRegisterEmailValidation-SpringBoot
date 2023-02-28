@@ -7,6 +7,7 @@ import com.apd.userLoginRegisterEmailValidationSpringBoot.models.UserRole;
 import com.apd.userLoginRegisterEmailValidationSpringBoot.repositories.TokenRepository;
 import com.apd.userLoginRegisterEmailValidationSpringBoot.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -60,7 +61,7 @@ public class RegistrationService {
                 .build();
         tokenRepository.save(token);
 
-        // Send th confirmation email
+        // Send the confirmation email
         try {
             emailService.send(
                     registrationDto.getEmail(),
@@ -74,5 +75,49 @@ public class RegistrationService {
 
         //return success message
         return generatedToken;
+    }
+
+    public String confirm(String token) {
+
+        // get the token
+        Token savedToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalStateException("Token not found."));
+        if (LocalDateTime.now().isAfter(savedToken.getExpiresAt())) {
+
+            // Generate a token
+            String generateToken = UUID.randomUUID().toString();
+            Token newToken = Token.builder()
+                    .token(generateToken)
+                    .createdAt(LocalDateTime.now())
+                    .expiresAt(LocalDateTime.now().plusMinutes(10))
+                    .user(savedToken.getUser())
+                    .build();
+            tokenRepository.save(newToken);
+
+            // Send the confirmation email
+            try {
+                emailService.send(
+                        savedToken.getUser().getEmail(),
+                        savedToken.getUser().getFirstName(),
+                        null,
+                        String.format(CONFIRMATION_URL, generateToken)
+                );
+            } catch (MessagingException e) {
+                e.printStackTrace();
+            }
+
+            return "Token expired, a new token has been sent to your email";
+        }
+
+        ApplicationUser user = repository.findById(savedToken.getUser().getId())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        user.setEnabled(true);
+        repository.save(user);
+
+        savedToken.setValidatedAt(LocalDateTime.now());
+        tokenRepository.save(savedToken);
+
+        return "<h1>Your account has been successfully activated</h1>";
     }
 }
