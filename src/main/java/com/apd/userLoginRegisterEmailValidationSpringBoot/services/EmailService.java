@@ -25,7 +25,7 @@ public class EmailService {
     @Async
     public void send(String to, String username, String templateName, String confirmationUrl) throws MessagingException {
         if (!StringUtils.hasLength(templateName)) {
-            templateName = "confirm-emaial";
+            templateName = "confirm-email";
         }
 
         MimeMessage mimeMessage = mailSender.createMimeMessage();
